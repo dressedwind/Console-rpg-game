@@ -10,6 +10,7 @@ sudo apt install libncurses5-dev libncursesw5-dev
 
 ### Arch
 To install the required libraries on Arch, use the following command:
+```sh
 sudo pacman -S ncurses
 
 ## Compilation and Execution
