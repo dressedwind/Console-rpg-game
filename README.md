@@ -4,13 +4,12 @@ This is a simple console game developed in C++ using the ncurses library. In thi
 
 ## Requirements
 
+Use the following command to install the required libraries on:
 ### Ubuntu
-To install the required libraries on Ubuntu, use the following command:
 ```sh
 sudo apt install libncurses5-dev libncursesw5-dev
 ```
 ### Arch
-To install the required libraries on Arch, use the following command:
 ```sh
 sudo pacman -S ncurses
 ```
