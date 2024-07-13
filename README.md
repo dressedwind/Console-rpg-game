@@ -12,11 +12,11 @@ sudo apt install libncurses5-dev libncursesw5-dev
 To install the required libraries on Arch, use the following command:
 sudo pacman -S ncurses
 
-##Compilation and Execution
-###Compilation:
+## Compilation and Execution
+### Compilation:
 To compile the game, use the following command:
     g++ main.cpp -o game -lncurses
 
-###Execution:
+### Execution:
 To run the game, use the following command:
     ./game
