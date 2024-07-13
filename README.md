@@ -26,3 +26,5 @@ To run the game, use the following command:
 ```sh
 ./game
 ```
+
+### Please open in full screen
