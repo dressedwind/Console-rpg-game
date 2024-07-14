@@ -161,23 +161,50 @@ void game(const vector<string> art_player, const vector<string> player) {
     }
 }
 
-void display_menu(const vector<string>& options, int selected) {
+void display_menu(const vector<string>& options, int selected, const vector<string>& art_start, const vector<string>& art_help, const vector<string>& art_exit) {
     clear();
+    int row, col;
+    getmaxyx(stdscr, row, col);
+
+    const vector<string>* art = nullptr;
+    if (selected == 0) {
+        art = &art_start;
+    } else if (selected == 1) {
+        art = &art_help;
+    } else if (selected == 2) {
+        art = &art_exit;
+    }
+
+    if (art != nullptr) {
+        int art_start_row = (row - art->size()) / 2;
+        for (size_t i = 0; i < art->size(); ++i) {
+            int start_col = (col - (*art)[i].length()) / 2;
+            if (i == art->size() - 1) {
+                attron(A_REVERSE);
+                mvprintw(art_start_row + i, start_col, (*art)[i].c_str());
+                attroff(A_REVERSE);
+            } else {
+                mvprintw(art_start_row + i, start_col, (*art)[i].c_str());
+            }
+        }
+    }
+
     for (size_t i = 0; i < options.size(); ++i) {
+        int start_col = (col - options[i].length()) / 2;
         if (i == selected) {
-			attron(A_REVERSE);
-			mvprintw(i, 0, options[i].c_str());
-			attroff(A_REVERSE);
+            attron(A_REVERSE);
+            mvprintw(row - (options.size() - i), start_col, options[i].c_str());
+            attroff(A_REVERSE);
         } else {
-            mvprintw(i, 0, options[i].c_str());
+            mvprintw(row - (options.size() - i), start_col, options[i].c_str());
         }
     }
     refresh();
 }
 
-void main_menu(const vector<string> art_player, const vector<string> player) {
+void main_menu(const vector<string> art_player, const vector<string> player, const vector<string> art_start, const vector<string> art_help, const vector<string> art_exit) {
     vector<string> options = {
-        "Start Game",
+        "Start",
         "Help",
         "Exit"
     };
@@ -186,7 +213,7 @@ void main_menu(const vector<string> art_player, const vector<string> player) {
     int ch;
 
     while (true) {
-        display_menu(options, selected);
+        display_menu(options, selected, art_start, art_help, art_exit);
 
         ch = getch();
         switch (ch) {
@@ -223,7 +250,7 @@ void show_warning(const vector<string>& art) {
         mvprintw(start_y + i, start_x, "%s", art[i].c_str());
     }
     refresh();
-    napms(5000); // Задержка на 5 секунд
+    napms(5000);
     clear();
     refresh();
 }
@@ -239,8 +266,10 @@ int main() {
 	vector<string> player = read("model/player.txt");
 	vector<string> art_start = read("model/start.txt");
 	vector<string> art_warning = read("model/warning.txt");
+	vector<string> art_help = read("model/help.txt");
+	vector<string> art_exit = read("model/exit.txt");
 	
-    if (!art_player.empty(), !player.empty(), !art_start.empty(), !art_warning.empty()) {
+    if (!art_player.empty(), !player.empty(), !art_start.empty(), !art_warning.empty(), !art_help.empty(), !art_exit.empty()) {
 
     } else {
         cerr << "Error: Art file is empty or could not be read." << endl;
@@ -249,7 +278,7 @@ int main() {
     }
     mvprintw(1, 1, "Open full screen");
     show_warning(art_warning);
-    main_menu(art_player, player);
+    main_menu(art_player, player, art_start, art_help, art_exit);
     endwin();
     return 0;
 }
