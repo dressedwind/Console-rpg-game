@@ -64,42 +64,38 @@ bool can_move(int y, int x, const vector<string>& player) {
         }
     }
 
-    for (size_t i = 0; i < player.size(); ++i) {
-        if (mvinch(y + i, x) == '=') {
-            return false;
-        }
-    }
-
     return true;
 }
 
+
 void erase_character(const vector<string>& player, int x, int y) {
-    for (int i = 0; i < player.size(); ++i) {
+    for (size_t i = 0; i < player.size(); ++i) {
         move(y + i, x);
-        for (int j = 0; j < player[i].size(); ++j) {
-            addch(' ');
-        }
+        clrtoeol();
     }
 }
 
-void move_character(int &y, int &x, int ch, const vector<string>& player) {
+void move_character(int &y, int &x, const string &commands, const vector<string>& player) {
     int new_y = y;
     int new_x = x;
 
-    switch (ch) {
-        case 'w':
-            new_y = y - 1;
-            break;
-        case 's':
-            new_y = y + 1;
-            break;
-        case 'a':
-            new_x = x - 1;
-            break;
-        case 'd':
-            new_x = x + 1;
-            break;
+    for (char ch : commands) {
+        switch (ch) {
+            case 'w':
+                new_y -= 1;
+                break;
+            case 's':
+                new_y += 1;
+                break;
+            case 'a':
+                new_x -= 1;
+                break;
+            case 'd':
+                new_x += 1;
+                break;
+        }
     }
+    
     if (can_move(new_y, new_x, player)) {
         y = new_y;
         x = new_x;
@@ -127,12 +123,17 @@ vector<string> read(const string& filepath) {
 void game(const vector<string> art_player, const vector<string> player) {
 	noecho();
     curs_set(0);
+    nodelay(stdscr, TRUE);
+    keypad(stdscr, TRUE);
+    
 	int x = COLS / 2;
     int y = LINES / 4;
     int old_x = x;
     int old_y = y;
     int ch;
+    string commands;
 	signal(SIGWINCH, handle_resize);
+	//инициализация
     draw_panel();
     draw_art_player(art_player);
     draw_player(player, x, y);
@@ -149,11 +150,17 @@ void game(const vector<string> art_player, const vector<string> player) {
         }
         
 		if (ch != ERR) {
-			erase_character(player, old_x, old_y);
-            move_character(y, x, ch, player);
+            commands += static_cast<char>(ch); // Добавление символа команды в строку
+        }
+
+        // Проверяем, есть ли команда для перемещения
+        if (!commands.empty()) {
+            erase_character(player, old_x, old_y);
+            move_character(y, x, commands, player);
             old_x = x;
             old_y = y;
-		}
+            commands.clear(); // Очистка строки команд после выполнения
+        }
         draw_art_player(art_player);
         draw_panel();
         draw_player(player, x, y);
@@ -242,23 +249,26 @@ void main_menu(const vector<string> art_player, const vector<string> player, con
 
 void show_warning(const vector<string>& art) {
     int row, col;
-    getmaxyx(stdscr, row, col); // Получение размеров окна
+    getmaxyx(stdscr, row, col);
     int start_y = (row - art.size()) / 2;
+    WINDOW* win = newwin(row, col, 0, 0);
+	box(win, 0, 0);
+	wrefresh(win);
 
     for (int i = 0; i < art.size(); ++i) {
         int start_x = (col - art[i].size()) / 2;
-        mvprintw(start_y + i, start_x, "%s", art[i].c_str());
+        mvwprintw(win, start_y + i, start_x, "%s", art[i].c_str());
     }
-    refresh();
+    wrefresh(win);
     napms(5000);
     clear();
-    refresh();
+    delwin(win);
 }
 
 int main() {
     initscr();            // Инициализация ncurses
     cbreak();             // Отключение канонического режима
-    echo();             // Отключение отображения вводимых символов
+    echo();               // Отключение отображения вводимых символов
     curs_set(0);          // Скрыть курсор
     keypad(stdscr, TRUE); // Включение обработки специальных клавиш
 
