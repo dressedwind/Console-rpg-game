@@ -75,27 +75,24 @@ void erase_character(const vector<string>& player, int x, int y) {
     }
 }
 
-void move_character(int &y, int &x, const string &commands, const vector<string>& player) {
+void move_character(int &y, int &x, int ch, const vector<string>& player) {
     int new_y = y;
     int new_x = x;
 
-    for (char ch : commands) {
-        switch (ch) {
-            case 'w':
-                new_y -= 1;
-                break;
-            case 's':
-                new_y += 1;
-                break;
-            case 'a':
-                new_x -= 1;
-                break;
-            case 'd':
-                new_x += 1;
-                break;
-        }
+    switch (ch) {
+        case 'w':
+            new_y = y - 1;
+            break;
+        case 's':
+            new_y = y + 1;
+            break;
+        case 'a':
+            new_x = x - 1;
+            break;
+        case 'd':
+            new_x = x + 1;
+            break;
     }
-    
     if (can_move(new_y, new_x, player)) {
         y = new_y;
         x = new_x;
@@ -123,17 +120,13 @@ vector<string> read(const string& filepath) {
 void game(const vector<string> art_player, const vector<string> player) {
 	noecho();
     curs_set(0);
-    nodelay(stdscr, TRUE);
-    keypad(stdscr, TRUE);
-    
 	int x = COLS / 2;
     int y = LINES / 4;
     int old_x = x;
     int old_y = y;
     int ch;
-    string commands;
 	signal(SIGWINCH, handle_resize);
-	//инициализация
+	
     draw_panel();
     draw_art_player(art_player);
     draw_player(player, x, y);
@@ -150,17 +143,11 @@ void game(const vector<string> art_player, const vector<string> player) {
         }
         
 		if (ch != ERR) {
-            commands += static_cast<char>(ch); // Добавление символа команды в строку
-        }
-
-        // Проверяем, есть ли команда для перемещения
-        if (!commands.empty()) {
-            erase_character(player, old_x, old_y);
-            move_character(y, x, commands, player);
+			erase_character(player, old_x, old_y);
+            move_character(y, x, ch, player);
             old_x = x;
             old_y = y;
-            commands.clear(); // Очистка строки команд после выполнения
-        }
+		}
         draw_art_player(art_player);
         draw_panel();
         draw_player(player, x, y);
@@ -187,9 +174,7 @@ void display_menu(const vector<string>& options, int selected, const vector<stri
         for (size_t i = 0; i < art->size(); ++i) {
             int start_col = (col - (*art)[i].length()) / 2;
             if (i == art->size() - 1) {
-                attron(A_REVERSE);
                 mvprintw(art_start_row + i, start_col, (*art)[i].c_str());
-                attroff(A_REVERSE);
             } else {
                 mvprintw(art_start_row + i, start_col, (*art)[i].c_str());
             }
