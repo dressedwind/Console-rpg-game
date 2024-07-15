@@ -47,7 +47,9 @@ void draw_panel() {
     int y = LINES / 4;
     mvhline(LINES - 20, 0, '=', max_x);
     mvhline(LINES - 1, 0, '=', max_x);
-    mvprintw(LINES - y, x, "Name: Ahggw", max_x);
+    mvprintw(LINES - y, x, "Name: ", max_x);
+    mvprintw(LINES - y - 1, x, "lvl:96 ", max_x);
+    mvprintw(LINES - y - 2, x, "test ", max_x);
     for (int i = 0; i < 18; ++i) {
         mvaddch(LINES - 2 - i, max_x - 1, '|');
     }
@@ -65,38 +67,6 @@ bool can_move(int y, int x, const vector<string>& player) {
     }
 
     return true;
-}
-
-
-void erase_character(const vector<string>& player, int x, int y) {
-    for (size_t i = 0; i < player.size(); ++i) {
-        move(y + i, x);
-        clrtoeol();
-    }
-}
-
-void move_character(int &y, int &x, int ch, const vector<string>& player) {
-    int new_y = y;
-    int new_x = x;
-
-    switch (ch) {
-        case 'w':
-            new_y = y - 1;
-            break;
-        case 's':
-            new_y = y + 1;
-            break;
-        case 'a':
-            new_x = x - 1;
-            break;
-        case 'd':
-            new_x = x + 1;
-            break;
-    }
-    if (can_move(new_y, new_x, player)) {
-        y = new_y;
-        x = new_x;
-    }
 }
 
 vector<string> read(const string& filepath) {
@@ -117,14 +87,52 @@ vector<string> read(const string& filepath) {
     return art;
 }
 
+void erase_character(const vector<string>& player, int x, int y) {
+    for (size_t i = 0; i < player.size(); ++i) {
+        move(y + i, x);
+        clrtoeol();
+    }
+}
+
+void move_character(int &y, int &x, int ch, const vector<string>& player) {
+    int new_y = y;
+    int new_x = x;
+
+    switch (ch) {
+        case 'w':
+        case KEY_UP:
+            new_y = y - 1;
+            break;
+        case 's':
+        case KEY_DOWN:
+            new_y = y + 1;
+            break;
+        case 'a':
+        case KEY_LEFT:
+            new_x = x - 1;
+            break;
+        case 'd':
+        case KEY_RIGHT:
+            new_x = x + 1;
+            break;
+    }
+    if (can_move(new_y, new_x, player)) {
+        y = new_y;
+        x = new_x;
+    }
+}
+
 void game(const vector<string> art_player, const vector<string> player) {
 	noecho();
     curs_set(0);
+    nodelay(stdscr, TRUE);
+    keypad(stdscr, TRUE);
 	int x = COLS / 2;
     int y = LINES / 4;
     int old_x = x;
     int old_y = y;
     int ch;
+    
 	signal(SIGWINCH, handle_resize);
 	
     draw_panel();
@@ -153,6 +161,10 @@ void game(const vector<string> art_player, const vector<string> player) {
         draw_player(player, x, y);
         refresh();
     }
+}
+
+void create_game() {
+	
 }
 
 void display_menu(const vector<string>& options, int selected, const vector<string>& art_start, const vector<string>& art_help, const vector<string>& art_exit) {
@@ -196,11 +208,11 @@ void display_menu(const vector<string>& options, int selected, const vector<stri
 
 void main_menu(const vector<string> art_player, const vector<string> player, const vector<string> art_start, const vector<string> art_help, const vector<string> art_exit) {
     vector<string> options = {
-        "Start",
-        "Help",
-        "Exit"
+        "Start Game",
+        "   Help   ",
+        "   Exit   "
     };
-
+	mousemask(ALL_MOUSE_EVENTS, NULL); // Enable mouse events
     int selected = 0;
     int ch;
 
@@ -219,14 +231,24 @@ void main_menu(const vector<string> art_player, const vector<string> player, con
                     selected++;
                 }
                 break;
+            case KEY_UP:
+                if (selected > 0) {
+                    selected--;
+                }
+                break;
+            case KEY_DOWN:
+                if (selected < options.size() - 1) {
+                    selected++;
+                }
+                break;
             case '\n':
                 if (selected == 0) {
-					clear();
+                    clear();
                     game(art_player, player);
-				}else if (selected == options.size() - 1) {
+                } else if (selected == options.size() - 1) {
                     endwin();
                     exit(0);
-                } 
+                }
                 break;
         }
     }
@@ -245,7 +267,7 @@ void show_warning(const vector<string>& art) {
         mvwprintw(win, start_y + i, start_x, "%s", art[i].c_str());
     }
     wrefresh(win);
-    napms(5000);
+    napms(1500);
     clear();
     delwin(win);
 }
