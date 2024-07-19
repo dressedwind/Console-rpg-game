@@ -1,6 +1,6 @@
 # Simple Console Game
 
-This is a simple console game developed in C++ using the ncurses library. In this game, the player controls the character and moves it around the screen using the arrow keys.
+This is a simple console game developed in C++ using the ncurses library.
 
 ## Requirements
 
