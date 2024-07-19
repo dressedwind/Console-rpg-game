@@ -4,17 +4,46 @@
 #include <csignal>
 #include <vector>
 #include <string>
+#include <sstream>
 
 using namespace std;
-void move_character(int &y, int &x, int ch);
+
+void move_character(int &y, int &x, int ch, const vector<string>& player);
 void draw_art_player(const vector<string>& art);
-void game(const vector<string> art_player, const vector<string> player);
-void main_menu(const vector<string> art_player, const vector<string> player);
-void display_menu(const vector<string>& options, int selected);
-void draw_player(const vector<string>& art, int x, int y, const vector<string>& player);
+void game(const vector<string> art_player, const vector<string> player, const vector<string> map, const string& name, int level);
+void main_menu(const vector<string> art_player, const vector<string> player, const vector<string> art_start, const vector<string> art_help, const vector<string> art_exit, const vector<string> map, const string& name, int level);
+void display_menu(const vector<string>& options, int selected, const vector<string>& art_start, const vector<string>& art_help, const vector<string>& art_exit);
+void draw_player(const vector<string>& art, int x, int y);
 bool can_move(int y, int x, const vector<string>& player);
 vector<string> read(const string& filepath);
 bool resized = false;
+
+struct Player {
+    string name;
+    int level;
+};
+
+Player loadPlayerInfo(const string& filename) {
+    Player player;
+    ifstream file(filename);
+    string line;
+
+    while (getline(file, line)) {
+        istringstream iss(line);
+        string key;
+        if (getline(iss, key, ':')) {
+            string value;
+            if (getline(iss, value)) {
+                if (key == "name") {
+                    player.name = value;
+                } else if (key == "lvl") {
+                    player.level = stoi(value);
+                }
+            }
+        }
+    }
+    return player;
+}
 
 void handle_resize(int sig) {
     resized = true;
@@ -35,24 +64,36 @@ void draw_art_player(const vector<string>& art) {
 }
 
 void draw_player(const vector<string>& art, int x, int y) {
-	for (size_t i = 0; i < art.size(); ++i) {
+    for (size_t i = 0; i < art.size(); ++i) {
         mvprintw(y + i, x, art[i].c_str());
     }
 }
 
-void draw_panel() {
-    int max_x;
-    getmaxyx(stdscr, max_x, max_x);
-	int x = COLS / 2;
+void draw_panel(const string& name, int level) {
+    int max_x, max_y;
+    getmaxyx(stdscr, max_y, max_x);
+    int x = COLS / 2;
     int y = LINES / 4;
     mvhline(LINES - 20, 0, '=', max_x);
     mvhline(LINES - 1, 0, '=', max_x);
-    mvprintw(LINES - y, x, "Name: ", max_x);
-    mvprintw(LINES - y - 1, x, "lvl:96 ", max_x);
-    mvprintw(LINES - y - 2, x, "test ", max_x);
+    mvprintw(LINES - y, x, "Name: %s", name.c_str());
+    mvprintw(LINES - y + 1, x, "lvl: %d", level);
     for (int i = 0; i < 18; ++i) {
         mvaddch(LINES - 2 - i, max_x - 1, '|');
     }
+}
+
+void drawMap(WINDOW* win, const vector<string>& map, int startRow, int startCol) {
+    int height, width;
+    getmaxyx(win, height, width);
+
+    for (int i = 0; i < height && i + startRow < map.size(); ++i) {
+        for (int j = 0; j < width && j + startCol < map[i + startRow].size(); ++j) {
+            mvwaddch(win, i, j, map[i + startRow][j + startCol]);
+        }
+    }
+
+    wrefresh(win);
 }
 
 bool can_move(int y, int x, const vector<string>& player) {
@@ -122,49 +163,47 @@ void move_character(int &y, int &x, int ch, const vector<string>& player) {
     }
 }
 
-void game(const vector<string> art_player, const vector<string> player) {
-	noecho();
+void game(const vector<string> art_player, const vector<string> player, const vector<string> map, const string& name, int level) {
+    noecho();
     curs_set(0);
     nodelay(stdscr, TRUE);
     keypad(stdscr, TRUE);
-	int x = COLS / 2;
+    int x = COLS / 2;
     int y = LINES / 4;
     int old_x = x;
     int old_y = y;
     int ch;
+    int startRow = 0;
+    int startCol = 0;
     
-	signal(SIGWINCH, handle_resize);
-	
-    draw_panel();
+    signal(SIGWINCH, handle_resize);
+    
+    draw_panel(name, level);
     draw_art_player(art_player);
     draw_player(player, x, y);
     refresh();
-	
-    while ((ch = getch()) != 'q') {
-		if (resized) {
+    
+    while ((ch = getch()) != 27) {  // 27 - код клавиши ESC
+        if (resized) {
             endwin();
             refresh();
             clear();
             resized = false;
-            draw_panel();
+            draw_panel(name, level);
             draw_art_player(art_player);
         }
         
-		if (ch != ERR) {
-			erase_character(player, old_x, old_y);
+        if (ch != ERR) {
+            erase_character(player, old_x, old_y);
             move_character(y, x, ch, player);
             old_x = x;
             old_y = y;
-		}
+        }
         draw_art_player(art_player);
-        draw_panel();
+        draw_panel(name, level);
         draw_player(player, x, y);
         refresh();
     }
-}
-
-void create_game() {
-	
 }
 
 void display_menu(const vector<string>& options, int selected, const vector<string>& art_start, const vector<string>& art_help, const vector<string>& art_exit) {
@@ -206,7 +245,9 @@ void display_menu(const vector<string>& options, int selected, const vector<stri
     refresh();
 }
 
-void main_menu(const vector<string> art_player, const vector<string> player, const vector<string> art_start, const vector<string> art_help, const vector<string> art_exit) {
+void main_menu(const vector<string> art_player, const vector<string> player, const vector<string> art_start, const vector<string> art_help, const vector<string> art_exit, const vector<string> map, const string& name, int level) {
+    nodelay(stdscr, FALSE);
+    
     vector<string> options = {
         "Start Game",
         "   Help   ",
@@ -244,7 +285,7 @@ void main_menu(const vector<string> art_player, const vector<string> player, con
             case '\n':
                 if (selected == 0) {
                     clear();
-                    game(art_player, player);
+                    game(art_player, player, map, name, level);
                 } else if (selected == options.size() - 1) {
                     endwin();
                     exit(0);
@@ -273,18 +314,20 @@ void show_warning(const vector<string>& art) {
 }
 
 int main() {
-    initscr();            // Инициализация ncurses
+	initscr();            // Инициализация ncurses
     cbreak();             // Отключение канонического режима
     echo();               // Отключение отображения вводимых символов
     curs_set(0);          // Скрыть курсор
     keypad(stdscr, TRUE); // Включение обработки специальных клавиш
-
+    
     vector<string> art_player = read("model/knight.txt");
 	vector<string> player = read("model/player.txt");
 	vector<string> art_start = read("model/start.txt");
 	vector<string> art_warning = read("model/warning.txt");
 	vector<string> art_help = read("model/help.txt");
 	vector<string> art_exit = read("model/exit.txt");
+	vector<string> map = read("model/map.txt");
+	Player player_stat = loadPlayerInfo("saves/player.txt");
 	
     if (!art_player.empty(), !player.empty(), !art_start.empty(), !art_warning.empty(), !art_help.empty(), !art_exit.empty()) {
 
@@ -295,7 +338,7 @@ int main() {
     }
     mvprintw(1, 1, "Open full screen");
     show_warning(art_warning);
-    main_menu(art_player, player, art_start, art_help, art_exit);
+    main_menu(art_player, player, art_start, art_help, art_exit, map, player_stat.name, player_stat.level);
     endwin();
     return 0;
 }
