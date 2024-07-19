@@ -314,11 +314,11 @@ void show_warning(const vector<string>& art) {
 }
 
 int main() {
-	initscr();            // Инициализация ncurses
-    cbreak();             // Отключение канонического режима
-    echo();               // Отключение отображения вводимых символов
-    curs_set(0);          // Скрыть курсор
-    keypad(stdscr, TRUE); // Включение обработки специальных клавиш
+	initscr();
+    cbreak();
+    echo();
+    curs_set(0); 
+    keypad(stdscr, TRUE);
     
     vector<string> art_player = read("model/knight.txt");
 	vector<string> player = read("model/player.txt");
