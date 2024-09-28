@@ -29,7 +29,3 @@ To run the game, use the command:
 ## Note:
 
 For the best experience, please open the terminal in full screen before running the game.
-
-## Feedback 
-
-If you find any bugs or would like to help with the project, please contact me at dressedwind@gmail.com
